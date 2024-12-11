@@ -1,0 +1,66 @@
+name:                "dual-governance"
+version:             0.1.0.0
+github:              "20squares/dual-governance"
+license:             "MIT"
+author:              "20squares UG"
+maintainer:          "philipp@20squares.xyz"
+copyright:           "2024 20squares UG"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+description:         Please see the README on GitHub at <https://github.com/20squares/dual-governance>
+
+dependencies:
+- base >= 4.7 && < 5
+- bytestring
+- containers
+- crem
+- extra
+- mtl
+- open-games-hs
+- optics
+- optics-core
+- probability
+- unordered-containers
+- time
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  dual-governance-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - dual-governance
+
+tests:
+  dual-governance-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - dual-governance
+    - hspec
+    - QuickCheck
+
