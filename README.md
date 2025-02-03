@@ -72,11 +72,13 @@ We provide an analysis of the proposed Dual Governance Mechanism by Lido. The ma
 
 We are employing different frameworks in order to provide answers to the above questions. Our main framework is game theoretic: We are using our own compositional game theory engine to analyze the incentives of the different actors involved in the dual governance on-chain mechanism.
 
-One consequence of the framework we use is that our analyses can be replicated, altered, and extended by anyone interested. In particular, in so far as changes to the dual governance mechanism or changes to parameters are proposed, its effect on our conclusions can be easily checked through running a battery of tests. We provide installation and usage hints in the sections below.
+One consequence of the game theoretic framework we use is that our analyses can be replicated, altered, and extended by anyone interested. In particular, in so far as changes to the dual governance mechanism or changes to parameters are proposed, its effect on our conclusions can be easily checked through running a battery of tests. We provide installation and usage hints in the sections below.
 
 A crucial aspect in modelling (in general) is the question of where to draw the boundary and what to abstract away. This is important as the mechanism does not exist in a vacuum but is embedded in the wider Lido protocol, the Ethereum ecosystem, and financial markets. It is evidently impossible to include all in our analysis. Instead, we need to make decisions on what to cut out.
 
-Most of our game theoretic analysis focuses on the mechanism proper. However, we add empirical analyses as well as approximations or back-of-the-envelope calculations for factors that influence the mechanism. One example includes the availability of (w)stETH. The mechanism relies on time duration in which execution is paused. It is crucial that some time windows allow sufficient stETH holders to react. But this requires that stETH is not locked in some contracts but readily available.
+Most of our game theoretic analysis focuses on the mechanism proper. However, we add empirical analyses as well as approximations or back-of-the-envelope calculations for factors that influence the mechanism. This also includes some of the parameter choices as they cannot be pinned down by the game theoretic analysis alone and are also partly exogenous. One example includes the availability of (w)stETH. The mechanism relies on time duration in which execution is paused. It is crucial that some time windows allow sufficient stETH holders to react. But this requires that stETH is not locked in some contracts but readily available.
+ 
+
 
 Throughout our analysis detailed knowledge of the mechanism and its [publicly available specification](https://github.com/lidofinance/dual-governance/blob/develop/docs/mechanism.md) is assumed.
 
@@ -89,7 +91,9 @@ The dual governance mechanism incentivizes agents to act based on the tradeoff b
 
 Effective use depends on perceptions of proposal detriment, beliefs about others’ reactions, and confidence in the mechanism’s reliability. However, coordination challenges, such as free-rider problems and private information can hinder its effectiveness.
 
-While it functions well against universally recognized detrimental proposals, achieving its negotiation-facilitation goal can be difficult for agents due to these challenges. It is important to recognize that the dual governance mechanism does not exist in a vacuum but its performance is contingent on the proper functioning of the DAO. Proposal introduction, proposal evaluation, and information dissemination are key for the dual governance mechanism to operate effectively.
+While it functions well against universally recognized detrimental proposals, achieving its negotiation-facilitation goal can be difficult for agents due to these challenges. It is important to recognize that the dual governance mechanism does not exist in a vacuum.
+
+On the one hand its performance is contingent on the proper functioning of the DAO. Proposal introduction, proposal evaluation, and information dissemination are key for the dual governance mechanism to operate effectively. On the other hand, while the mechanism itself might function as intended in the case of an issue, to use this mechanism token holder need to transfer their tokens into the contract. These transfers are contingent on the proper working of the wider eco-system. If many agents aim to get their tokens into to the contract at the same, this might only be achieved at significant costs. There is therefore a danger that the effectiveness of the mechanism is weakened exactly then when the mechanism is needed most.
 
 ### New Attack Vectors
 
@@ -121,17 +125,24 @@ Let us end this section with a remark how the above could be extended. In princi
 
 ### Parameter choices and recommendations
 
-Given the uncertainty around the social dynamics it is impossible to pin down specific value recommendations for parameters. There are also too many non-quantifiable moving parts (e.g. the DAO processes; behavior of committees). Trying to pin-point specific values would be dubious and not justified given the analyses we did. 
+When the Dual Governance Mechanism gets deployed as a smart contract, concrete choices for parameters are required. In the following we discuss reasonable choices of parameters.
 
-Instead we provide directional recommendations, that is whether parameters should be rather increased or decreased given the current values chosen.
+The first thing to note is that while parameters affect the equilibrium behavior of the game (and we do have investigated parameter ranges which support the equilibria), the game theoretic analyses alone are not sufficient to sufficiently pin down parameters.
 
-The introduction of the dual governance mechanism poses a general tradeoff between two objectives: protecting (w)stETH holders and protecting the core protocol from damages and unnecessary delays. Several of the key parameters are obviously exposed to this tradeoff. Before picking on specific parameters, we want to emphasize a high-level perspective. In our analysis, the mechanism performs as intended in case of an obviously malicious proposal. Most problems arise when proposals are ambiguous - this is also where one provides easier surface for intentionally halting or delaying decisions.
+The reason is simple: The game theoretic models make assumptions regarding the outside environment. For instance, the time period during which an introduced proposal can be halted is not very relevant for this analysis. However, as pointed out above, the social dynamics that affect whether and how long it takes for (w)stETH holders to make use of the mechanism are clearly important for the mechanism _and_ are affected by parameter choices. The same applies to the costs of an attack which are, as discussed in the section before, affected by the parameters.
+There are too many non-quantifiable moving parts (e.g. the DAO processes; behavior of committees). Trying to pin-point specific point values would be dubious and not justified given the analyses we did.
+
+Instead we first provide directional recommendations, that is whether parameters should be rather increased or decreased given the current values chosen. We also employ additional back of the envelope calculations how to further restrict the interval of plausible choices. It goes without saying that such analyses are rough approximations and should be refined in the future. We provide several pointers.
+
+We begin with some directional recommendations, that is, whether parameters should be rather increased or decreased given the current values chosen.
+
+The introduction of the dual governance mechanism poses a general tradeoff between two objectives: protecting (w)stETH holders and protecting the core protocol from damages and unnecessary delays. Several of the key parameters are obviously exposed to this tradeoff. Before picking on specific parameters, we want to emphasize a high-level perspective. In our analysis, the mechanism performs as intended in case of an obviously malicious proposal so that a fraction of (w)stETH holders want to leave the system. Most problems arise when proposals are ambiguous - this is also where one provides easier surface for intentionally halting or delaying decisions.
 
 Thus, from our perspective, the overall goal should be to emphasize the role of the mechanism as an actual safety hatch and demote its role as a way to facilitate arbitration between (w)stETH holders and LDO holders. This means that if the mechanism gets called it should visit states only once as far as possible. Say, a proposal is critical and the veto-signalling state is triggered. Then, it is preferable if the mechanism either extends to rage-quit with stakers leaving or returns to normal - after all an initial assessment of a proposal might be wrong or a bad proposal gets withdrawn. In our view the mechanism works best if it serves as a credible threat that disciplines the DAO decision-making and prevents the introduction of bad proposals in the first place. But for this to work, the mechanism cannot be used as an extension of the DAO.
 
-What does this imply for parameters values? Longer timelock thresholds give (w)stETH holders more time to act but increase costs to the protocol, while shorter thresholds reduce delays but may expose stakers to risk. Analyses of token distributions shows that although a few entities can trigger veto-signaling or rage quit, most tokens are locked in contracts, limiting immediate availability. This suggests that the initial phases of a proposal should allow leniency for evaluations, but once attention is high, decisions should occur more quickly and maximal timelocks therefore reduced.
+What does this imply for parameters values? Longer timelock thresholds give (w)stETH holders more time to act but increase costs to the protocol, while shorter thresholds reduce delays but may expose stakers to risk. Analyses of token distributions shows that although a few entities can trigger veto-signaling or rage quit, most tokens are locked in contracts, limiting immediate availability. This suggests that the initial phases of a proposal should allow leniency for evaluations, but once attention is high, decisions should occur as quickly as deemed feasible for token holders to get into the contract. The question of how quickly (and at which costs) token holders can get into the contract is plagued by uncertainty: Depending on the amount of inflow congestion and high costs may result. This is one of the areas which warrants further analysis.
 
-This means: lowering the trigger threshold for veto-signaling, increasing the minimum time-lock duration, raising the rage quit threshold, and shortening the maximum time-lock. These changes aim to facilitate rapid attention to critical proposals while minimizing extended limbo periods.
+This means: lowering the trigger threshold for veto-signaling, increasing the minimum time-lock duration, raising the rage quit threshold, and (possibly) shortening the maximum time-lock. These changes aim to facilitate rapid attention to critical proposals while minimizing extended limbo periods.
 
 To prevent halting attacks, it is again important to realize that there are no direct costs of an attack as tokens in the escrow get transferred back into ETH. As the maximal timelock does only marginally increase an attacker's costs but possibly increases the attractiveness of halting the protocol significantly, shorter maximal timelocks seem preferable.
 
@@ -142,13 +153,15 @@ One way of raising the costs of an attack could be through raising the rage quit
 
 As remarked above, while we consider interactions of the dual governance mechanism with the outside world, we have to make cuts and ignore possibly important aspects.
 
-We want to draw attention to two aspects here:
+We want to draw attention to three aspects here:
 
 1. The decision-making process in the DAO. In particular, how information processing works, how information spreads in which speed through the network, and in which sense there might be information cascades due to herd/ follow-the-leader behavior. As our analysis shows, the way the DAO operates is of key importance for the proper functioning of the dual governance mechanism.
 
 2. Sophisticated financial attacks on LIDO. Our analyses is mostly focused on the internal workings of the dual governance mechanism. While have considered attacks and its associated costs on the protocol, we ignore the motives behind an attack. In particular, possible attacks on the protocol in order to gain from financial exploits is outside the scope of our (current) analyses.
 
-It is also important to understand that the conclusions derived here are based on an extensive but ultimately finite number of scenarios we consider. Similar to testing of software, the absence of problems is no proof of absence of issues in the design. In addition, the models we generated are relying on a non-trivial codebase we have built up in the course of this project. Like any other codebase, we cannot exclude the possibility of errors. Lastly, it is important to emphasize again that our model (intentionally) is based on the specification not the actual implementation.
+3. The proper working of the mechanism is contingent on the ability of actors to transfer their tokens into the mechanism. This itself is contingent on the wider-ecosystem. Analyses and stress tests which evaluate the inflow under distress could help to demonstrate the reliability of the mechanism.
+
+Lastly, it is important to understand that the conclusions derived here are based on an extensive but ultimately finite number of scenarios we consider. Similar to testing of software, the absence of problems is no proof of absence of issues in the design. In addition, the models we generated are relying on a non-trivial codebase we have built up in the course of this project. Like any other codebase, we cannot exclude the possibility of errors. It is also important to emphasize again that our model (intentionally) is based on the specification not the actual implementation.
 
 # Explaining the game-theoretic model
 
@@ -380,11 +393,11 @@ Now, let us further assume a proposal has been flagged as critical by some agent
 
 What does this imply for the dual governance mechanism? From our perspective this suggests that the initial phases until which a given proposal can be executed should rather be lenient and given thresholds possibly extended until an execution can happen. But after the veto-signalling stage is reached, under the assumption that with sufficient attention an assessment is reached rather fast, it should be clear that the proposal is either withdrawn and the problem thereby mitigated or it persists. In the latter case, (w)stETH holders will want to use the safety hatch.
 
-It is clear that one needs a way to correct a false first assessment of a proposal wrongly assumed to be malicious. This is why there should be a way for (w)stETH holders to get out of the escrow. But as discussed before, once the sufficient level of attention is achieved, there is not necessarily the need to keep the protocol in a limbo for too long. Currently, the maximal time-lock is 45 days. This could be shortened. A lower bound clearly is the ability for agents to unlock certain stETH from contracts they own (plus a sufficient safety cushion).
+It is clear that one needs a way to correct a false first assessment of a proposal wrongly assumed to be malicious. This is why there should be a way for (w)stETH holders to get out of the escrow. But as discussed before, once the sufficient level of attention is achieved, there is not necessarily the need to keep the protocol in a limbo for too long. In turn, this suggests to possibly shortening the maximum time lock. A counteracting force is the time that is needed for token holders whose tokens are not available short term to get into the contract. In addition, when many agents aim to get out of existing contracts there will be possibly congestion and time delays. As remarked before the big uncertainty concerns what happens in the case of a massive outflow at once. This warrants further analysis.
 
-In sum, to us this suggests a directionally lower trigger threshold for the veto-signalling to start ($R_1$); a higher minimum time-lock ($L_1$); a higher threshold for rage quit ($R_2$); and lastly a lower maximum time-lock ($L_{max}$).
+In sum, to us this suggests a directionally lower trigger threshold for the veto-signalling to start ($R_1$); a higher minimum time-lock ($L_1$); a higher threshold for rage quit ($R_2$); and lastly a lower maximum time-lock ($L_{max}$) subject to token holders having enough time to unlock their tokens from contracts and get into the Dual Governance Mechanism escrow.
 
-Again, the logic being, give time and make it easy to create a pause. But then force a decision and a continuation rather quicker than before.
+Again, the logic being, give time and make it easy to create a pause. But then force a decision.
 
 ### Preventing the halting of the protocol
 
