@@ -151,15 +151,17 @@ One way of raising the costs of an attack could be through raising the rage quit
 
 ## Limitations of analyses and further directions
 
-As remarked above, while we consider interactions of the dual governance mechanism with the outside world, we have to make cuts and ignore possibly important aspects.
+As remarked above, while we consider interactions of the dual governance mechanism with the outside world, given limited time, we have to make cuts and ignore possibly important aspects.
 
 We want to draw attention to three aspects here:
 
 1. The decision-making process in the DAO. In particular, how information processing works, how information spreads in which speed through the network, and in which sense there might be information cascades due to herd/ follow-the-leader behavior. As our analysis shows, the way the DAO operates is of key importance for the proper functioning of the dual governance mechanism.
 
-2. Sophisticated financial attacks on LIDO. Our analyses is mostly focused on the internal workings of the dual governance mechanism. While have considered attacks and its associated costs on the protocol, we ignore the motives behind an attack. In particular, possible attacks on the protocol in order to gain from financial exploits is outside the scope of our (current) analyses.
+2. Sophisticated financial attacks on LIDO. Our analyses are mostly focused on the internal workings of the dual governance mechanism. While have considered attacks and its associated costs on the protocol, we ignore the motives behind an attack. In particular, possible attacks on the protocol in order to gain from financial exploits is outside the scope of our (current) analyses.
 
 3. The proper working of the mechanism is contingent on the ability of actors to transfer their tokens into the mechanism. This itself is contingent on the wider-ecosystem. Analyses and stress tests which evaluate the inflow under distress could help to demonstrate the reliability of the mechanism.
+
+Note that all three aspects and also the mechanisms itself are moving targets. We provide a snapshot analysis that should be extended and kept up to date over time.
 
 Lastly, it is important to understand that the conclusions derived here are based on an extensive but ultimately finite number of scenarios we consider. Similar to testing of software, the absence of problems is no proof of absence of issues in the design. In addition, the models we generated are relying on a non-trivial codebase we have built up in the course of this project. Like any other codebase, we cannot exclude the possibility of errors. It is also important to emphasize again that our model (intentionally) is based on the specification not the actual implementation.
 
