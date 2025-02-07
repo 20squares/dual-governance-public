@@ -3,13 +3,14 @@
 - [Table of contents](#table-of-contents)
 - [Summary](#summary)
     - [Objectives](#objectives)
-    - [Analytical Frameworks](#analytical-frameworks)
+    - [Analytical frameworks](#analytical-frameworks)
     - [Main results](#main-results)
+        - [TL;DR](#tldr)
         - [Intended function of the mechanism](#intended-function-of-the-mechanism)
-        - [New Attack Vectors](#new-attack-vectors)
+        - [New attack vectors](#new-attack-vectors)
         - [Costs of temporarily halting the protocol](#costs-of-temporarily-halting-the-protocol)
         - [Parameter choices and recommendations](#parameter-choices-and-recommendations)
-    - [Limitations of analyses and further directions](#limitations-of-analyses-and-further-directions)
+        - [Limitations of analyses and further directions](#limitations-of-analyses-and-further-directions)
 - [Explaining the game-theoretic model](#explaining-the-game-theoretic-model)
     - [State machine components](#state-machine-components)
     - [Models and model components](#models-and-model-components)
@@ -31,6 +32,13 @@
     - [Parameter choices and tradeoffs](#parameter-choices-and-tradeoffs)
         - [Improve the functioning of the protocol as a safety hatch](#improve-the-functioning-of-the-protocol-as-a-safety-hatch)
         - [Preventing the halting of the protocol](#preventing-the-halting-of-the-protocol)
+        - [Concrete restrictions of parameters](#concrete-restrictions-of-parameters)
+            - [Initiation parameters](#initiation-parameters)
+            - [Entering into VetoSignalling and RageQuit](#entering-into-vetosignalling-and-ragequit)
+            - [Out of rage quit](#out-of-rage-quit)
+            - [Cycling through the state machine.](#cycling-through-the-state-machine)
+            - [Committees](#committees)
+            - [All parameters](#all-parameters)
 - [Installation](#installation)
     - [Test execution](#test-execution)
     - [Interactive execution](#interactive-execution)
@@ -57,7 +65,6 @@
 
 <!-- markdown-toc end -->
 
-
 # Summary
 
 ## Objectives
@@ -67,8 +74,9 @@ We provide an analysis of the proposed Dual Governance Mechanism by Lido. The ma
 1. Does the mechanism work and protect (w)stETH holders? In particular, can malicious proposals be introduced by the DAO and be executed or can they be stopped and if adequate be renegotiated? Under which conditions is a renegotiation feasible?
 2. Does the mechanism introduce new vectors of attack on the main protocol? In particular, are there actions available that halt the main protocol indefinitely or delay the execution of non-malicious proposals? Can we estimate the costs associated with a possible attack?
 
+Besides the general architecture of the proposed mechanism which is the main focus of our analyses, both objectives depend on the exact choice of parameters set by the protocol. In addition, deployed contracts have to pick specific parameters. We were also tasked to address which parameter ranges are reasonable.
 
-## Analytical Frameworks
+## Analytical frameworks
 
 We are employing different frameworks in order to provide answers to the above questions. Our main framework is game theoretic: We are using our own compositional game theory engine to analyze the incentives of the different actors involved in the dual governance on-chain mechanism.
 
@@ -77,15 +85,59 @@ One consequence of the game theoretic framework we use is that our analyses can 
 A crucial aspect in modelling (in general) is the question of where to draw the boundary and what to abstract away. This is important as the mechanism does not exist in a vacuum but is embedded in the wider Lido protocol, the Ethereum ecosystem, and financial markets. It is evidently impossible to include all in our analysis. Instead, we need to make decisions on what to cut out.
 
 Most of our game theoretic analysis focuses on the mechanism proper. However, we add empirical analyses as well as approximations or back-of-the-envelope calculations for factors that influence the mechanism. This also includes some of the parameter choices as they cannot be pinned down by the game theoretic analysis alone and are also partly exogenous. One example includes the availability of (w)stETH. The mechanism relies on time duration in which execution is paused. It is crucial that some time windows allow sufficient stETH holders to react. But this requires that stETH is not locked in some contracts but readily available.
- 
 
-
-Throughout our analysis detailed knowledge of the mechanism and its [publicly available specification](https://github.com/lidofinance/dual-governance/blob/develop/docs/mechanism.md) is assumed.
+Throughout our analysis detailed knowledge of the mechanism and its [publicly available specification](https://github.com/lidofinance/dual-governance/blob/develop/docs/mechanism.md** is assumed.
 
 
 ## Main results
 
-### Intended function of the mechanism
+### TL;DR
+
+**Intended function of the Mechanism**
+- For evidently malicious proposals, the mechanism works mostly as intended.
+- In the case of proposals whose consequences are less clear; its proper functioning is not certain.
+- Dependence on the Ecosystem:
+  - DAO: The mechanism's effectiveness relies on the working of the DAO; i.e. proposal introduction, evaluation, and information dissemination.
+  - Liquidity & Congestion: During critical periods, high demand to lock tokens can lead to congestion and elevated costs, potentially weakening the mechanism when it is most needed.
+
+**New Attack Vectors**
+- No critical vulnerabilities were identified
+- Increased Complexity: The mechanism’s added complexity introduces new risks, such as exploiting state oscillations (e.g., toggling veto-signaling) to delay or block decisions.
+- Manipulation Risks: Attackers might leverage ambiguous proposal assessments or manipulate committee actions, which could lead to prolonged protocol halts or harmful proposals being pushed through.
+
+**Parameter Recommendations**
+- Parameters cannot be pinned down by the game theoretic model alone; hence auxiliary analyses to restrict parameter bounds
+- Parameters should balance protecting (w)stETH holders against preventing harmful proposals and unnecessary delays.
+- Suggested directional adjustments:
+  - Lower the trigger threshold for veto-signaling.
+  - Increase the minimum time-lock duration to give token holders more time to react.
+  - Raise the rage quit threshold to make attacks more expensive and provide time for token holds to get into the contract.
+- Overall Goal: Ensure the mechanism functions primarily as a last-resort safety measure rather than a negotiation tool, avoiding prolonged limbo states.
+
+Our analyses result in the following proposed parameter ranges:
+
+| Parameter                             | Default | Min  | Max | Unit  | Adaptable? |
+|:--------------------------------------|:--------|:-----|:----|:------|:-----------|
+| FirstSealRageQuitSupport    $R_1$     | 1       | 0.17 | 1.6 | %     | x          |
+| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30  | %     |            |
+| ProposalExecutionMinTimelock          | 3       | 2    | 7   | days  | x          |
+| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7   | days  |            |
+| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75  | days  |            |
+| SignallingEscrowMinLockTime           | 5       | 4    | 6   | hrs   | x          |
+| VetoSignallingMinActiveDuration       | 5       | 3    | 9   | hrs   | x          |
+| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3   | days  |            |
+| VetoCooldownDuration                  | 5       | 4    | 12  | hrs   | x          |
+| RageQuitExtensionPeriodDuration       | 7       | 7    | 14  | days  |            |
+| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90  | days  |            |
+| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240 | days  |            |
+| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45  | days  |            |
+| TiebreakerExecutionTimelock           | 1       | -    | -   | month |            |
+| TieBreakerActivationTimeout           | 1       | -    | -   | year  |            |
+
+
+`Default` refers to values proposed in the initial spec. `Adaptable?` parameters are ones which should be monitored in practice - they are possibly used even though it does not come to a rage quit event. E.g. if `FirstSealRageQuitSupport` is chosen too small and a repeated invoking and thereby halting of the protocol is observed, the parameter can be adapted upwards.
+
+### Intended function of the mechanism ###
 
 The dual governance mechanism incentivizes agents to act based on the tradeoff between opportunity costs (e.g. forgone earnings) of sending tokens to the escrow and expected rewards, shaped by their expectations of the game’s evolution.
 
@@ -95,7 +147,7 @@ While it functions well against universally recognized detrimental proposals, ac
 
 On the one hand its performance is contingent on the proper functioning of the DAO. Proposal introduction, proposal evaluation, and information dissemination are key for the dual governance mechanism to operate effectively. On the other hand, while the mechanism itself might function as intended in the case of an issue, to use this mechanism token holder need to transfer their tokens into the contract. These transfers are contingent on the proper working of the wider eco-system. If many agents aim to get their tokens into to the contract at the same, this might only be achieved at significant costs. There is therefore a danger that the effectiveness of the mechanism is weakened exactly then when the mechanism is needed most.
 
-### New Attack Vectors
+### New attack vectors ###
 
 We did not identify critical vulnerabilities due to the introduction of the dual governance mechanism. We note again that we did not conduct a code-level review of the implementation. And, while obvious, still worth emphasizing, the fact that we did not identify a vulnerability does not mean there are no critical vulnerabilities.
 
@@ -107,7 +159,7 @@ In general, compared to the state of the protocol without the dual governance me
 
 The proposed introduction of new committees to provide a solution for a possible deadlock introduces significant risks, particularly the possibility of an indefinite protocol halt. It also opens up possible attack routes through side-payments and bribes to members. Currently, it is hard to make a more systematic assessment of the committees as its size, voting thresholds, exact member selection, and voting rules are only partially known. These should be made publicly available so that people can assess the credibility of these committees. Evidently, and similar to the composition of existing committees, the selection of suited committee members with reputation in the ecosystem and being aligned with Lido and/or having assets at risk is one way of mitigating the risk of corruptible persons.
 
-### Costs of temporarily halting the protocol
+### Costs of temporarily halting the protocol ###
 
 We also did some very approximate calculations regarding the costs of halting the protocol. Note that we ignore possible motives - there might be ways how to halt the protocol and profit at the same time. Due to the complexity of the DeFi landscape that is beyond the scope of this report. We do make (rough) proposals how an assessment could be refined.
 
@@ -121,9 +173,9 @@ Additionally, sell pressure on (w)stETH from escrow-related activities might low
 
 Overall, while the liquidity requirements are substantial, opportunity costs remain the primary factor, and social dynamics or market reactions could significantly alter the cost and feasibility of such attacks.
 
-Let us end this section with a remark how the above could be extended. In principle, it should be possible to derive some bounds on both costs and possible payoffs of an attack. On the costs side this would require estimating the liquidity costs for different potential existing liquidity positions as well as different possible target needs (assuming other inflows into the escrow). It should also be done over different time horizons as building up a position short term would be evidently more costly. On the payoff side, for instance, one angle would be to consider the possibility of shorting LDO. Under certain circumstances this might be a viable upper bound for the value of an attack. Both, costs and benefits, could be estimated with sufficient investment in data and suitable analyses. This would enable a rough comparison between costs and benefits and help to gauge how lucrative an attack might be under given conditions. Related to understanding the costs of building up a suitable position which would enable an attack, is that this could also be flipped into a monitoring system. The build up of critical positions or shifts in the distribution of (w)stETH positions could be used for early warnings or trigger points for closer monitoring.
+Let us end this section with a remark how the above could be extended. In principle, it should be possible to derive some bounds on both costs and possible payoffs of an attack. On the costs side this would require estimating the liquidity costs for different potential existing liquidity positions as well as different possible target needs (assuming other inflows into the escrow). It should also be done over different time horizons as building up a position short term would be evidently more costly. On the payoff side, for instance, one angle would be to consider the possibility of shorting LDO or mis-pricing as a result of token holders getting their (w)stETH out of liquidity pools. Under certain circumstances this might be a viable upper bound for the value of an attack. Both, costs and benefits, could be estimated with sufficient investment in data and suitable analyses. This would enable a rough comparison between costs and benefits and help to gauge how lucrative an attack might be under given conditions. Related to understanding the costs of building up a suitable position which would enable an attack, is that this could also be flipped into a monitoring system. The build up of critical positions or shifts in the distribution of (w)stETH positions could be used for early warnings or trigger points for closer monitoring.
 
-### Parameter choices and recommendations
+### Parameter choices and recommendations ###
 
 When the Dual Governance Mechanism gets deployed as a smart contract, concrete choices for parameters are required. In the following we discuss reasonable choices of parameters.
 
@@ -148,8 +200,7 @@ To prevent halting attacks, it is again important to realize that there are no d
 
 One way of raising the costs of an attack could be through raising the rage quit threshold. The cost of acquiring sufficient tokens likely grow non-linearly with the threshold as it becomes more and more expensive to acquire extra tokens. Note, that the costs do not rise for (w)stETH holders acting in good faith  as they already hold the necessary liquidity. Lastly, lengthening the withdrawal timelock further reduces the appeal of (repeated) attacks. At the same time this exposes holders more the ETH macro risks as they cannot leave the eco-system.
 
-
-## Limitations of analyses and further directions
+### Limitations of analyses and further directions ###
 
 As remarked above, while we consider interactions of the dual governance mechanism with the outside world, given limited time, we have to make cuts and ignore possibly important aspects.
 
@@ -411,8 +462,175 @@ The big unknown are the costs of building up a position. It is evident that the 
 
 It is therefore worthwhile to consider higher thresholds. Note that a higher threshold for rage quit would not necessarily impose costs on (w)stETH holder in the case of a malicious proposal by the DAO - the case where the rage quit serves an honest purpose. The reason is simple, whoever already holds (w)stETH does not have the costs of acquiring extra liquidity.
 
+### Concrete restrictions of parameters
+
+The first step in providing further, more concrete bounds for parameters is to realize that a subset of the overall parameters is more important than other parameters. We will first focus on them:
+
+| Parameter                          |
+|:-----------------------------------|
+| FirstSealRageQuitSupport    $R_1$  |
+| SecondSealRageQuitSupport   $R_2$  |
+| ProposalExecutionMinTimelock       |
+| DynamicTimelockMinDuration $L_min$ |
+| DynamicTimelockMaxDuration $L_max$ |
+| RageQuitEthWithdrawalsMinDelay     |
+| RageQuitEthWithdrawalsMaxDelay     |
+| RageQuitEthWithdrawalsDelayGrowth  |
+
+This selection is based on the analysis before: Focus of the mechanism should be on an emergency vehicle that is only used in an actual emergency subject to minimizing ways to misuse it. This naturally shifts the focus on the initiation of the mechanism as well as the execution of the rage quit. Any limbo going back and forth should be minimized.
+
+#### Initiation parameters
+
+One task of the mechanism is to assure that the protocol can initiate a pause so that stakeholders can better understand and analyze a given possibly malicious proposals.
+
+The key parameters here are _FirstSealRageQuitSupport_ and _ProposalExecutionMinTimelock_. For a proposal introduced at time $t$, the latter determines a time-lock $t+ProposalExecutionMinTimelock$ during which the DAO cannot execute the proposal.
+
+This also means that sufficient tokens have to be transferred into the Dual Governance Mechanism contract in order to be able to activate the VetoSignalling State.
+
+To pick the parameters, as we noted above, this depends on two factors: 1. How fast does information spread? 2. How fast can (w)stETH holders react?
+
+Starting with the latter observation, we can easily bound the value for the `FirstSealRageQuitSupport` from above: The fraction of tokens that are short-term available. As the time of writing (January 2025) this is roughly 0.39 percent of overall value.
+
+Now, this upper bound presupposes that all of this value is directly available _and_ that the agents behind are informed about the proposal, and share the view that it is possibly malicious. This is evidently unrealistic. As discussed above, we focus on the idea that the mechanism is meant to stop a bad proposal. So, we assume for now that once informed agents will recognize the malicious attack and aim to get their own assets in safe harbor and ignore any strategic considerations.
+
+In this case, the key question becomes which share of (w)stETH holders get aware of the issue at hand _in time_, that is, before `ProposalExecutionMinTimelock` expires. The spread of information can be modelled in various ways. As we have little information on actual information spread, we did this by considering a growth model of information spread in hrs from the point of introduction (both exponential and logistic growth) as well as using a diffusion model. Note that we focus on the logistic growth model as this gives the - not surprisingly - most conservative estimates.
+
+Key assumptions are the initial fraction of informed parties $f0$ and how fast information spread grows $lambda$. We also assume that availability of transferrable tokens increases over time. We apply conservative estimates of 40% of the privately held (w)stETH value being available after 5 days; 10% within 24hrs and linearly extended in between.
+
+|     f0 | lambda |       24hrs |       48hrs |       72hrs |       96hrs |
+|-------:|-------:|------------:|------------:|------------:|------------:|
+| 0.0001 |  0.025 | 7.10568e-06 | 2.58909e-05 | 7.07452e-05 | 0.000171789 |
+| 0.0001 |   0.05 | 1.29455e-05 | 8.58947e-05 |  0.00042668 |  0.00187299 |
+| 0.0001 |    0.1 | 4.29473e-05 | 0.000936496 |   0.0138214 |   0.0930111 |
+| 0.0001 |    0.2 | 0.000468248 |   0.0465055 |    0.116352 |    0.155993 |
+|  0.001 |  0.025 | 7.10043e-05 |  0.00025837 | 0.000704253 |  0.00170255 |
+|  0.001 |   0.05 | 0.000129185 | 0.000851275 |   0.0041348 |    0.016917 |
+|  0.001 |    0.1 | 0.000425638 |  0.00845848 |   0.0670165 |    0.146114 |
+|  0.001 |    0.2 |  0.00422924 |   0.0730569 |    0.116935 |    0.155999 |
+|   0.01 |  0.025 | 0.000704832 |  0.00253097 |  0.00673785 |   0.0156296 |
+|   0.01 |   0.05 |  0.00126548 |  0.00781479 |   0.0315785 |   0.0859625 |
+|   0.01 |    0.1 |  0.00390739 |   0.0429812 |    0.108947 |    0.154961 |
+|   0.01 |    0.2 |   0.0214906 |   0.0774805 |    0.116994 |       0.156 |
+
+As one can see from the table a wide range of scenarios is plausible. In the absence of more precise analyses and taking the perspective of the mechanism to be a safety hatch, it makes sense to be conservative and rather err on the side of making the mechanism sufficiently sensitive. When considering the percentiles from 10% to 30%, this gives us a range of 0.0017 to 0.0160.
+
+The downside of a low threshold is evidently that the mechanism could be triggered for other reasons. Yet, if this happens and it turns out the threshold is too sensitive, it can be adjusted upward over time. Moreover, the initiation per se is not too costly. The main question is how long the mechanism will stay in this state.
+
+We note again, that the above is a back-of-the-envelope calculation and a place-holder for a more refined analysis. Evidently, replacing this calculation with a different model (e.g. based on estimates of the DAO's decision making) can give more precise bounds on the parameters. Lastly, it is important to note that this is a snapshot in time. If distribution of tokens change, say more tokens being stuck in contracts, the analysis would not be valid anymore.
+
+#### Entering into VetoSignalling and RageQuit
+
+Recall that we focus on the one-time use of the mechanism as an escape hedge. Assuming sufficient tokens have been transferred into the contract to trigger the `VetoSignalling` state, the main question now is: how long should the mechanism stay there (depending on the conditions)? We first focus on the `DynamicTimelockMinDuration` and `DynamicTimelockMaxDuration`.
+
+There are several tradeoffs to be considered. First, the time-window must be sufficiently long so that an acceptable fraction of (w)stETH holders can use the escape route. Secondly, the time-window must also be sufficiently long for a possible de-escalation. That is, in case a proposal was erroneously assessed as malicious (or has been withdrawn), there must be enough time for individuals to update their information and leave the contract. We posit that the former dominates the latter: The time-sensitive part is getting aware of a potential malicious proposal. Once individuals have the issue on their radar, they will be much quicker to react to information that outs the initial threat as not critical. It is also in their own interest. Once they take the escape route they are exposed to opportunity costs and will not have access to their tokens (and later ETH) over an extended period of time. So, the relevant criterion is how fast individuals can get into the contract.
+
+We already considered the immediate availability of tokens (0-1 days). This group formed the basis for a short term inflow (and activation) of the system. Besides this group there are tokens bound in contracts. The availability for these tokens varies widely depending on the type of contract. For instance, tokens bound in some lending protocols - depending on the conditions - could be retrieved in a few days. On the other hand, tokens bound in illiquid liquidity pools might take significantly longer. Note that there is also a lot of uncertainty regarding the process of unlocking (w)stETH from contracts. In particular, if there is a sudden movement by many agents, this can congest the process significantly - let alone that this might lead to severe costs. This is a highly complex question and warrants its own careful analysis.
+
+Providing such an analysis is beyond the scope of this report. As a back of the envelope calculation, we assume that the largest chunk of tokens could be send into the contract within 30 days. Now providing an additional safety margin, for instance in order to ease the pressure on markets, this would give us a range of 30-75 days.
+
+So far, we focused on honest actors trying to leave the system in the case of a malicious proposal being introduced. It is important to note that the time during which the protocol halts is also relevant for an attacker. Given the complexity of the DeFi ecosystem it is a formidable task to come up with an exact estimate how valuable an attack would be. But as a first approximation, the longer the attacker can halt the protocol, the more lucrative a possible attack. This suggests to reduce the time during which the protocol is halted and therefore goes in a different direction than the forces described before.
+
+Yet, there is another dimension as well: If an attacker can induce a panic so that a large share of users want to leave the system at the same time, then the shorter the duration to escape the system the more possibilities to profit from leaving users might exist.
+
+In general the tradeoffs are not clear. We posit though that the reduced costs through a shortening of the VetoSignalling stage probably cannot massively deter an attacker. In contrast, reducing the duration for (w)stETH holders to escape seems overall more critical.
+
+Given the way the time-lock is designed, there is a also a way to increase the costs of the attacker, reducing the time spent in `VetoSignalling`, and still keep a relatively long duration in case a serious problem exists. As noted before due to the nature of the protocol there is no possibility of directly slashing an attacker. The only costs encompass the opportunity costs of having values locked in as well as the costs of creating a sufficiently strong liquidity position. 
+
+These costs are influenced by the `SecondSealRageQuitSupport` parameter. We already argued before that it makes sense to increase this value. But given the way the dynamic timelock duration is calculated, namely
+
+$$
+T_{\text{lock}}(R) =
+\begin{cases} 
+    0, & \text{if } R < R_1 \\
+    L(R), & \text{if } R_1 \leq R < R_2 \\
+    L_{\max}, & \text{if } R \geq R_2
+\end{cases}
+$$
+
+where
+
+$$
+L(R) = L_{\min} + \frac{(R - R_1)}{R_2 - R_1} (L_{\max} - L_{\min}),
+$$
+
+this parameter also influences the duration of how long the protocol possibly halts. In the table below, we depict the timelock for a given value of `RageQuitSupport` for different values:
+
+| Parameter | Scenario1 | Scenario2 | Scenario3 |
+|:----------|:----------|:----------|:----------|
+| R         | 0.1       | 0.1       | 0.1       |
+| $R_1$     | 0.01      | 0.01      | 0.01      |
+| $R_2$     | **0.1**   | **0.2**   | **0.3**   |
+| $L_{min}$ | 5         | 5         | 5         |
+| $L_{max}$ | 45        | 45        | 45        |
+| L(R)      | 45        | 23.9      | 17.4      |
+
+As one can see for larger thresholds of rage quit, the time spent in `VetoSignalling` will reduce. As in the case of a malicious proposal, more and more tokens will flow in over time and increase the time during which other token holders can also come into the contract.
+
+A last parameter needs to be pinned down: `SignallingEscrowMinLockTime`, which determines how fast a staker staked in the contract can unlock his/her tokens and exit the contract. This parameter prevents a too fast cycling in and out of the contract. This suggests a longer threshold. At the same time, stakers should have enough time to undo their decisions in the face of news. The latter suggests a threshold not exceeding a value beyond 8-12 hrs. On the lower end, it is hard to pin down exact values but in order to avoid too much volatility, at minimum a threshold of 3-4 hrs suggests it self.
+
+Initially, it is probably best to aim for more sensitive values first. If one were to observe cycles in and out of the contract, one could adapt the values accordingly. Thus, we propose a range for `SignallingEscrowMinLockTime` between 4-6 hrs.
+
+#### Out of rage quit
+
+Assuming the rage quit state has been triggered, the question is how long this state shall prevail. In terms of the parameters this means: How long should the then exchanged ETH be time-locked after the withdrawl NFTs have been burnt? 
+
+There are two tradeoffs here: First, honest users are exposed to macro risk, for instance changes in ETH relative to USD. The longer the timelock the higher the risks. Second, in so far as an attacker misused the contract to trigger a rage quit, the longer ETH is locked, the less attractive an attack becomes. This is in particular true if an attack has systemic consequences. Thereby an attacker is at least partially exposed to these consequences and needs to take them into account when launching an attack.
+
+Pinning down numbers is hard. From our perspective it makes sense to initialize the system with relatively conservative parameters. In the case of unforeseen contingencies this might also equip the DAO with more time to react.
+
+Overall, we suggest:
+
+`RageQuitEthWithdrawalsMinDelay` between 50 and 90 days.
+`RageQuitEthWithdrawalsMaxDelay` between 150 and 220 days.
+
+We have emphasized the role of the mechanism as a way to go "one direction only" and not cycle repeatedly through states. Hence, from our view the `RageQuitEthWithdrawalsDelayGrowth` parameter should be set relatively high, between 15 and 45 days.
+
+Lastly, one needs to decide on `RageQuitExtensionPeriodDuration`. We do not see much economic impact of this parameter. It obviously should provide agents sufficient time to react and convert their withdrawl NFTs. 7-14 days should be sufficient for this.
+
+#### Cycling through the state machine.
+
+As discussed repeatedly before, the mechanism should be an emergency vehicle and not be used for extending decision-making of the DAO. There are several parameters which concern how long the state machine will stay in a particular state. This concerns in particular the `VetoSignalling Deactivation Substate` and the `VetoCooldown` state.
+
+From our perspective, the parameters should be chosen so that they discourage a flipping back and forth between different states. Again, the idea is that if the Dual Governance Mechanism is activated, then it should either build up towards the rage quit or back towards the Normal state in case of a false alarm.
+
+For the `VetoSignallingDeactivationMaxDuration` parameter, which determines how long before the `VetoCooldown` state is entered - which requires no additional inflows into the contract, we propose a range from 1 to 3 days. 
+
+Once in `VetoCooldown` state, the `VetoCooldownDuration` determines how much time needs to pass before the state goes back into `Normal`. We propose a time frame of 4-12 hrs.
+
+Lastly, `VetoSignallingMinActiveDuration` needs to be fixed. This parameter prevents a "mechanical" cycling between `VetoSignalling` and the deactivation sub-state. We do not see much relevance for the wider mechanism. The parameter should be fine-tuned given the mechanism of the contracts. Given the default value, a choice between 3-9 hrs seems adequate.
+
+#### Committees
+
+As we discussed before the committees are rather opaque. At this stage we do not have arguments in favor or against changing the default parameters proposed so far.
+
+#### All parameters
+
+Taken together, our analyses result in the following proposed parameter ranges:
+
+| Parameter                             | Default | Min  | Max | Unit  | Adaptable? |
+|:--------------------------------------|:--------|:-----|:----|:------|:-----------|
+| FirstSealRageQuitSupport    $R_1$     | 1       | 0.17 | 1.6 | %     | x          |
+| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30  | %     |            |
+| ProposalExecutionMinTimelock          | 3       | 2    | 7   | days  | x          |
+| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7   | days  |            |
+| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75  | days  |            |
+| SignallingEscrowMinLockTime           | 5       | 4    | 6   | hrs   | x          |
+| VetoSignallingMinActiveDuration       | 5       | 3    | 9   | hrs   | x          |
+| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3   | days  |            |
+| VetoCooldownDuration                  | 5       | 4    | 12  | hrs   | x          |
+| RageQuitExtensionPeriodDuration       | 7       | 7    | 14  | days  |            |
+| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90  | days  |            |
+| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240 | days  |            |
+| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45  | days  |            |
+| TiebreakerExecutionTimelock           | 1       | -    | -   | month |            |
+| TieBreakerActivationTimeout           | 1       | -    | -   | year  |            |
+
+
+`Default` refers to values proposed in the initial spec. `Adaptable?` parameters are ones which should be monitored in practice - they are possibly used even though it does not come to a rage quit event. E.g. if `FirstSealRageQuitSupport` is chosen too small and a repeated invoking and thereby halting of the protocol is observed, the parameter can be adapted upwards.
+
 
 # Installation
+
 To run the model, it is necessary to have `haskell` and `stack` installed on your machine. Refer to the subsection [Addendum: Installing haskell](#addendum-installing-haskell) for instructions. A deeper dive into the code structure can be found in the [Code deep dive](#code-deep-dive) subsection.
 
 There are three ways of running the model: test, interactive, and main execution.
