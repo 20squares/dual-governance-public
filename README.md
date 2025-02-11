@@ -489,7 +489,8 @@ This also means that sufficient tokens have to be transferred into the Dual Gove
 
 To pick the parameters, as we noted above, this depends on two factors: 1. How fast does information spread? 2. How fast can (w)stETH holders react?
 
-Starting with the latter observation, we can easily bound the value for the `FirstSealRageQuitSupport` from above: The fraction of tokens that are short-term available. As an approximation we consider wallet accounts that are not bound in contracts. From a data set we received (February 2025), which covers about 81% of (w)stETH holdings, this is about 0.33 percent of overall value.
+
+Starting with the latter observation, we can easily bound the value for the `FirstSealRageQuitSupport` from above: The fraction of tokens that are short-term available. We already discussed above that data on existing holdings can be used for this calculation. Using the same data set as introduced before, we consider wallet accounts that are not bound in contracts and are instead labelled as "Private". As of February 2025, this is about 0.33 percent of overall value. Note that the data set covers about 81% of (w)stETH holdings. As we do not have information about the rest of the holdings, we conservatively assume that they are not short-term available.
 
 Now, this upper bound presupposes that all of this value is directly available _and_ that the agents behind are informed about the proposal, and share the view that it is possibly malicious. This is evidently unrealistic. As discussed above, we focus on the idea that the mechanism is meant to stop a bad proposal. So, we assume for now that once informed agents will recognize the malicious attack and aim to get their own assets in safe harbor and ignore any strategic considerations.
 
