@@ -116,23 +116,23 @@ Throughout our analysis detailed knowledge of the mechanism and its [publicly av
 
 Our analyses result in the following proposed parameter ranges:
 
-| Parameter                             | Default | Min  | Max | Unit  | Adaptable? |
-|:--------------------------------------|:--------|:-----|:----|:------|:-----------|
-| FirstSealRageQuitSupport    $R_1$     | 1       | 0.17 | 1.6 | %     | x          |
-| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30  | %     |            |
-| ProposalExecutionMinTimelock          | 3       | 2    | 7   | days  | x          |
-| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7   | days  |            |
-| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75  | days  |            |
-| SignallingEscrowMinLockTime           | 5       | 4    | 6   | hrs   | x          |
-| VetoSignallingMinActiveDuration       | 5       | 3    | 9   | hrs   | x          |
-| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3   | days  |            |
-| VetoCooldownDuration                  | 5       | 4    | 12  | hrs   | x          |
-| RageQuitExtensionPeriodDuration       | 7       | 7    | 14  | days  |            |
-| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90  | days  |            |
-| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240 | days  |            |
-| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45  | days  |            |
-| TiebreakerExecutionTimelock           | 1       | -    | -   | month |            |
-| TieBreakerActivationTimeout           | 1       | -    | -   | year  |            |
+| Parameter                             | Default | Min  | Max  | Unit  | Adaptable? |
+|:--------------------------------------|:--------|:-----|:-----|:------|:-----------|
+| FirstSealRageQuitSupport    $R_1$     | 1       | 0.15 | 1.36 | %     | x          |
+| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30   | %     |            |
+| ProposalExecutionMinTimelock          | 3       | 2    | 7    | days  | x          |
+| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7    | days  |            |
+| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75   | days  |            |
+| SignallingEscrowMinLockTime           | 5       | 4    | 6    | hrs   | x          |
+| VetoSignallingMinActiveDuration       | 5       | 3    | 9    | hrs   | x          |
+| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3    | days  |            |
+| VetoCooldownDuration                  | 5       | 4    | 12   | hrs   | x          |
+| RageQuitExtensionPeriodDuration       | 7       | 7    | 14   | days  |            |
+| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90   | days  |            |
+| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240  | days  |            |
+| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45   | days  |            |
+| TiebreakerExecutionTimelock           | 1       | -    | -    | month |            |
+| TieBreakerActivationTimeout           | 1       | -    | -    | year  |            |
 
 
 `Default` refers to values proposed in the initial spec. `Adaptable?` parameters are ones which should be monitored in practice - they are possibly used even though it does not come to a rage quit event. E.g. if `FirstSealRageQuitSupport` is chosen too small and a repeated invoking and thereby halting of the protocol is observed, the parameter can be adapted upwards.
@@ -421,7 +421,7 @@ For that reason, it might take time for DAO members and then also (w)stETH holde
 
 In that context it is also important to realize that the dual governance mechanisms plays a crucial role in creating attention through the inflow and the possible activation of a state change.
 
-Yet, for this mechanism to actually work, it is key to understand how easy such an inflow actually is. For that purpose, we have done some simple empirical analyses based on the current token distribution (data provided by the Lido team).
+Yet, for this mechanism to actually work, it is key to understand how easy such an inflow actually is. For that purpose, we have done some simple empirical analyses based on the current token distribution (data provided by the Lido team and dated February 2025).
 
 The following two graphics show the distribution of stETH (wstETH) ordered by holding size. Included in the figure (horizontal lines) are several key thresholds.
 
@@ -429,7 +429,7 @@ The following two graphics show the distribution of stETH (wstETH) ordered by ho
 
 ![Total distribution of wstETH](./figures/wsteth_distribution.png)
 
-These figures suggest that a significant number of entities can activate parts of the dual governance mechanism single-handedly (at the time of writing 1 can single-handedly cause a rage quit; 13 entities can cause the mechanism to switch to veto-signalling).
+These figures suggest that a significant number of entities can activate parts of the dual governance mechanism single-handedly (at the time of writing 3 can single-handedly cause a rage quit; 12 entities can cause the mechanism to switch to veto-signalling).
 
 However, considering the total amount of tokens provides us only with a partial picture. A large chunk of tokens are stored in contracts or locked up. Which means they might not be easily transferred into the escrow - or at least this might take time and might also be associated with costs.
 
@@ -440,7 +440,7 @@ The following two graphs show the distribution of tokens that can be identified 
 
 ![Distribution of wstETH with privateentities](./figures/private_wsteth_distribution_to_total.png)
 
-As one can see the picture looks significantly different. As only around 35% of stETH and 15% wstETH are held by private wallets, on a short term notice only a significantly lower share of tokens can be moved in the escrow to activate the dual governance mechanism.
+As one can see the picture looks significantly different. As around 43% of stETH and 17% of wstETH are held by private wallets, on a short term notice only a significantly lower share of tokens can be moved in the escrow to activate the dual governance mechanism.
 
 Now, let us further assume a proposal has been flagged as critical by some agents. We posit that once a certain attention level is crossed, the overall evaluation mechanism, i.e. different agents looking and assessing a given proposal is quite fast.
 
@@ -489,7 +489,7 @@ This also means that sufficient tokens have to be transferred into the Dual Gove
 
 To pick the parameters, as we noted above, this depends on two factors: 1. How fast does information spread? 2. How fast can (w)stETH holders react?
 
-Starting with the latter observation, we can easily bound the value for the `FirstSealRageQuitSupport` from above: The fraction of tokens that are short-term available. As the time of writing (January 2025) this is roughly 0.39 percent of overall value.
+Starting with the latter observation, we can easily bound the value for the `FirstSealRageQuitSupport` from above: The fraction of tokens that are short-term available. As an approximation we consider wallet accounts that are not bound in contracts. From a data set we received (February 2025), which covers about 81% of (w)stETH holdings, this is about 0.33 percent of overall value.
 
 Now, this upper bound presupposes that all of this value is directly available _and_ that the agents behind are informed about the proposal, and share the view that it is possibly malicious. This is evidently unrealistic. As discussed above, we focus on the idea that the mechanism is meant to stop a bad proposal. So, we assume for now that once informed agents will recognize the malicious attack and aim to get their own assets in safe harbor and ignore any strategic considerations.
 
@@ -497,22 +497,22 @@ In this case, the key question becomes which share of (w)stETH holders get aware
 
 Key assumptions are the initial fraction of informed parties $f0$ and how fast information spread grows $lambda$. We also assume that availability of transferrable tokens increases over time. We apply conservative estimates of 40% of the privately held (w)stETH value being available after 5 days; 10% within 24hrs and linearly extended in between.
 
-|     f0 | lambda |       24hrs |       48hrs |       72hrs |       96hrs |
-|-------:|-------:|------------:|------------:|------------:|------------:|
-| 0.0001 |  0.025 | 7.10568e-06 | 2.58909e-05 | 7.07452e-05 | 0.000171789 |
-| 0.0001 |   0.05 | 1.29455e-05 | 8.58947e-05 |  0.00042668 |  0.00187299 |
-| 0.0001 |    0.1 | 4.29473e-05 | 0.000936496 |   0.0138214 |   0.0930111 |
-| 0.0001 |    0.2 | 0.000468248 |   0.0465055 |    0.116352 |    0.155993 |
-|  0.001 |  0.025 | 7.10043e-05 |  0.00025837 | 0.000704253 |  0.00170255 |
-|  0.001 |   0.05 | 0.000129185 | 0.000851275 |   0.0041348 |    0.016917 |
-|  0.001 |    0.1 | 0.000425638 |  0.00845848 |   0.0670165 |    0.146114 |
-|  0.001 |    0.2 |  0.00422924 |   0.0730569 |    0.116935 |    0.155999 |
-|   0.01 |  0.025 | 0.000704832 |  0.00253097 |  0.00673785 |   0.0156296 |
-|   0.01 |   0.05 |  0.00126548 |  0.00781479 |   0.0315785 |   0.0859625 |
-|   0.01 |    0.1 |  0.00390739 |   0.0429812 |    0.108947 |    0.154961 |
-|   0.01 |    0.2 |   0.0214906 |   0.0774805 |    0.116994 |       0.156 |
+|     f0 |   lambda |      log_24 |      log_48 |      log_72 |     log_96 |
+|-------:|---------:|------------:|------------:|------------:|-----------:|
+| 0.0001 |    0.025 | 6.0125e-06  | 2.19077e-05 | 5.98613e-05 | 0.00014536 |
+| 0.0001 |    0.05  | 1.09538e-05 | 7.26801e-05 | 0.000361037 | 0.00158484 |
+| 0.0001 |    0.1   | 3.63401e-05 | 0.000792419 | 0.0116951   | 0.0787017  |
+| 0.0001 |    0.2   | 0.00039621  | 0.0393508   | 0.0984513   | 0.131994   |
+| 0.001  |    0.025 | 6.00805e-05 | 0.00021862  | 0.000595906 | 0.00144062 |
+| 0.001  |    0.05  | 0.00010931  | 0.00072031  | 0.00349868  | 0.0143143  |
+| 0.001  |    0.1   | 0.000360155 | 0.00715717  | 0.0567063   | 0.123635   |
+| 0.001  |    0.2   | 0.00357859  | 0.0618174   | 0.0989449   | 0.131999   |
+| 0.01   |    0.025 | 0.000596396 | 0.00214159  | 0.00570126  | 0.013225   |
+| 0.01   |    0.05  | 0.00107079  | 0.00661251  | 0.0267203   | 0.0727375  |
+| 0.01   |    0.1   | 0.00330626  | 0.0363687   | 0.0921863   | 0.131121   |
+| 0.01   |    0.2   | 0.0181844   | 0.0655604   | 0.0989945   | 0.132      |
 
-As one can see from the table a wide range of scenarios is plausible. In the absence of more precise analyses and taking the perspective of the mechanism to be a safety hatch, it makes sense to be conservative and rather err on the side of making the mechanism sufficiently sensitive. When considering the percentiles from 10% to 30%, this gives us a range of 0.0017 to 0.0160.
+As one can see from the table a wide range of scenarios is plausible. In the absence of more precise analyses and taking the perspective of the mechanism to be a safety hatch, it makes sense to be conservative and rather err on the side of making the mechanism sufficiently sensitive. When considering the percentiles from 10% to 30%, this gives us a range of 0.0015 to 0.0136.
 
 The downside of a low threshold is evidently that the mechanism could be triggered for other reasons. Yet, if this happens and it turns out the threshold is too sensitive, it can be adjusted upward over time. Moreover, the initiation per se is not too costly. The main question is how long the mechanism will stay in this state.
 
@@ -607,23 +607,23 @@ As we discussed before the committees are rather opaque. At this stage we do not
 
 Taken together, our analyses result in the following proposed parameter ranges:
 
-| Parameter                             | Default | Min  | Max | Unit  | Adaptable? |
-|:--------------------------------------|:--------|:-----|:----|:------|:-----------|
-| FirstSealRageQuitSupport    $R_1$     | 1       | 0.17 | 1.6 | %     | x          |
-| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30  | %     |            |
-| ProposalExecutionMinTimelock          | 3       | 2    | 7   | days  | x          |
-| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7   | days  |            |
-| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75  | days  |            |
-| SignallingEscrowMinLockTime           | 5       | 4    | 6   | hrs   | x          |
-| VetoSignallingMinActiveDuration       | 5       | 3    | 9   | hrs   | x          |
-| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3   | days  |            |
-| VetoCooldownDuration                  | 5       | 4    | 12  | hrs   | x          |
-| RageQuitExtensionPeriodDuration       | 7       | 7    | 14  | days  |            |
-| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90  | days  |            |
-| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240 | days  |            |
-| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45  | days  |            |
-| TiebreakerExecutionTimelock           | 1       | -    | -   | month |            |
-| TieBreakerActivationTimeout           | 1       | -    | -   | year  |            |
+| Parameter                             | Default | Min  | Max  | Unit  | Adaptable? |
+|:--------------------------------------|:--------|:-----|:-----|:------|:-----------|
+| FirstSealRageQuitSupport    $R_1$     | 1       | 0.15 | 1.36 | %     | x          |
+| SecondSealRageQuitSupport   $R_2$     | 10      | 10   | 30   | %     |            |
+| ProposalExecutionMinTimelock          | 3       | 2    | 7    | days  | x          |
+| DynamicTimelockMinDuration $L_min$    | 5       | 3    | 7    | days  |            |
+| DynamicTimelockMaxDuration $L_max$    | 45      | 30   | 75   | days  |            |
+| SignallingEscrowMinLockTime           | 5       | 4    | 6    | hrs   | x          |
+| VetoSignallingMinActiveDuration       | 5       | 3    | 9    | hrs   | x          |
+| VetoSignallingDeactivationMaxDuration | 3       | 1    | 3    | days  |            |
+| VetoCooldownDuration                  | 5       | 4    | 12   | hrs   | x          |
+| RageQuitExtensionPeriodDuration       | 7       | 7    | 14   | days  |            |
+| RageQuitEthWithdrawalsMinDelay        | 60      | 45   | 90   | days  |            |
+| RageQuitEthWithdrawalsMaxDelay        | 180     | 150  | 240  | days  |            |
+| RageQuitEthWithdrawalsDelayGrowth     | 15      | 15   | 45   | days  |            |
+| TiebreakerExecutionTimelock           | 1       | -    | -    | month |            |
+| TieBreakerActivationTimeout           | 1       | -    | -    | year  |            |
 
 
 `Default` refers to values proposed in the initial spec. `Adaptable?` parameters are ones which should be monitored in practice - they are possibly used even though it does not come to a rage quit event. E.g. if `FirstSealRageQuitSupport` is chosen too small and a repeated invoking and thereby halting of the protocol is observed, the parameter can be adapted upwards.
